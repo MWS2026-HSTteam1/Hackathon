@@ -1,0 +1,120 @@
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Incident Disclosure Navigator</title>
+  <meta name="description" content="サイバーインシデント発覚後の報告判断・社内外調整・文案作成を支援">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071b33'/%3E%3Cpath d='M32 9 51 16v15c0 12-8 20-19 25C21 51 13 43 13 31V16l19-7Z' fill='none' stroke='%2329d3e2' stroke-width='5'/%3E%3Cpath d='M23 32h18M32 23v18' stroke='white' stroke-width='5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+<!--
+  <script src="chrome-extension://ajdpfmkffanmkhejnopjppegokpogffp/assets/prompt.js"></script></head>
+-->
+
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="mark">ID</div><div><strong>Incident Disclosure Navigator</strong><span>CSIRT Coordination Workspace</span></div></div>
+    <div class="top-actions"><span class="privacy"><i></i>案件はこの端末内に保存</span><button class="ghost dark" id="newCaseBtn">新規案件</button><button class="primary compact" id="saveBtn">案件を保存</button></div>
+  </header>
+  <div class="casebar">
+    <label>案件名<input id="caseName" value="ECサイト不正アクセス事案"></label>
+    <label>発覚日時<input id="detectedAt" type="datetime-local"></label>
+    <label>対応フェーズ<select id="phase"><option value="triage">初動整理</option><option value="investigation">詳細調査</option><option value="notification">報告・通知</option></select></label>
+    <div class="case-state"><span id="saveState">変更あり</span><button id="historyBtn" class="text-btn">履歴を見る</button></div>
+  </div>
+  <main class="workspace">
+    <aside class="input-pane">
+      <div class="section-head"><div><p class="eyebrow">INCIDENT FACTS</p><h1>事案情報</h1></div><span class="step">1 / 3</span></div>
+      <fieldset class="presets"><legend>案件の作成方法</legend><button data-preset="blank" class="blank selected">＋ 空白から新規作成</button><button data-preset="mistake">検証済み：誤送信</button><button data-preset="ecommerce">検証済み：EC侵害</button><button data-preset="hospital">検証済み：病院ランサム</button><p>テンプレートは入力例です。任意の事案・複合事象を登録できます。</p></fieldset>
+      <form id="incidentForm">
+        <div class="form-grid">
+          <label class="wide">企業・組織名<input id="companyName" type="text" placeholder="例：株式会社〇〇"></label>
+          <label>組織種別<select id="orgType"><option value="listed">上場企業</option><option value="private">非上場・一般企業</option><option value="government">行政機関・自治体</option><option value="medical">医療法人・病院</option><option value="education_org">学校法人・教育機関</option><option value="nonprofit">非営利・その他</option></select></label>
+          <label>業種大分類<select id="industryMajor"><option value="other">その他・未判定</option><option value="primary">水産・農林業</option><option value="mining">鉱業</option><option value="construction">建設業</option><option value="manufacturing">製造業</option><option value="utilities">電気・ガス業</option><option value="transport_info">運輸・情報通信業</option><option value="commerce">商業</option><option value="finance_insurance">金融・保険業</option><option value="realestate">不動産業</option><option value="services">サービス業</option></select></label>
+          <label>東証33業種<select id="tse33"><option value="">該当なし・未判定</option><option>水産・農林業</option><option>鉱業</option><option>建設業</option><option>食料品</option><option>繊維製品</option><option>パルプ・紙</option><option>化学</option><option>医薬品</option><option>石油・石炭製品</option><option>ゴム製品</option><option>ガラス・土石製品</option><option>鉄鋼</option><option>非鉄金属</option><option>金属製品</option><option>機械</option><option>電気機器</option><option>輸送用機器</option><option>精密機器</option><option>その他製品</option><option>電気・ガス業</option><option>陸運業</option><option>海運業</option><option>空運業</option><option>倉庫・運輸関連業</option><option>情報・通信業</option><option>卸売業</option><option>小売業</option><option>銀行業</option><option>証券、商品先物取引業</option><option>保険業</option><option>その他金融業</option><option>不動産業</option><option>サービス業</option></select></label>
+          <label>事業セクター<input id="businessSector" type="text" list="businessSectorOptions" placeholder="例：一般サービス"><datalist id="businessSectorOptions"><option value="一般サービス"></option><option value="製造"></option><option value="販売・小売"></option><option value="情報サービス"></option><option value="金融・決済"></option><option value="医療"></option><option value="教育・研究"></option><option value="通信インフラ"></option><option value="物流・倉庫"></option><option value="エネルギー・公益"></option></datalist></label>
+          <label>対応プレイブック<select id="sector"><option value="general">一般</option><option value="manufacturing">製造</option><option value="finance">金融・決済</option><option value="healthcare">医療</option><option value="education">教育</option><option value="retail">小売・EC</option><option value="telecom">情報通信</option><option value="transport">運輸・物流</option><option value="energy">電気・ガス</option><option value="public">公共</option></select></label>
+          <label class="wide">重要業務候補<input id="criticalFunctions" type="text" placeholder="例：製造、品質保証、受発注、物流"></label>
+          <fieldset class="option-group wide"><legend>発生事象（複数選択可）</legend><div class="checks compact-checks">
+            <label><input name="incidentEvent" value="unauthorized" type="checkbox">不正アクセス</label><label><input name="incidentEvent" value="malware" type="checkbox">マルウェア感染</label>
+            <label><input name="incidentEvent" value="ransomware" type="checkbox">ランサムウェア</label><label><input name="incidentEvent" value="misdelivery" type="checkbox">誤送信・誤公開</label>
+            <label><input name="incidentEvent" value="lost" type="checkbox">端末・媒体の紛失</label><label><input name="incidentEvent" value="insider" type="checkbox">内部不正</label>
+            <label><input name="incidentEvent" value="vulnerability" type="checkbox">脆弱性悪用・発見</label><label><input name="incidentEvent" value="ddos" type="checkbox">DDoS・サービス妨害</label>
+            <label><input name="incidentEvent" value="supplychain" type="checkbox">委託先・サプライチェーン</label><label><input name="incidentEvent" value="other" type="checkbox">その他・未分類</label>
+          </div></fieldset>
+          <label>対象人数<input id="affectedCount" type="number" min="0" value="4200"></label>
+          <label>人数の確度<select id="countConfidence"><option value="max">最大見込</option><option value="confirmed">確定</option><option value="unknown">未確認</option></select></label>
+          <label class="wide">漏えい等の状況<select id="leakStatus"><option value="unknown">未確認・調査中</option><option value="confirmed">漏えい・滅失・毀損を確認</option><option value="suspected">漏えい等のおそれ</option><option value="unlikely">現時点で証拠なし</option><option value="not_applicable">個人データに関係しない</option></select></label>
+        </div>
+        <fieldset class="option-group"><legend>影響対象（複数選択可）</legend><div class="checks compact-checks">
+          <label><input id="personalData" type="checkbox">個人情報・個人データ</label><label><input id="sensitive" type="checkbox">要配慮個人情報</label>
+          <label><input id="financial" type="checkbox">決済・財産的被害のおそれ</label><label><input id="myNumber" type="checkbox">マイナンバー含有／不明</label>
+          <label><input id="credentials" type="checkbox">認証情報</label><label><input id="medicalData" type="checkbox">医療・診療情報</label>
+          <label><input id="confidential" type="checkbox">営業秘密・機密情報</label><label><input id="serviceDown" type="checkbox">業務・サービス停止</label>
+        </div></fieldset>
+        <fieldset class="option-group"><legend>原因・関係主体</legend><div class="checks compact-checks">
+          <label><input id="malicious" type="checkbox">不正目的の行為</label><label><input id="humanError" type="checkbox">人為ミス・設定不備</label>
+          <label><input id="outsourced" type="checkbox">委託先・サプライチェーン関係</label><label><input id="ongoing" type="checkbox">攻撃・影響が継続中</label>
+        </div></fieldset>
+        <label class="notes-label">判明している事実<textarea id="facts" rows="4"></textarea></label>
+        <button class="primary full" type="submit">判定を更新</button>
+      </form>
+      <div class="scenario-progress"><p class="eyebrow">QUICK UPDATE</p><strong>調査進展を事案へ反映</strong><div><button data-progress="detect">発覚直後に戻す</button><button data-progress="exfil">外部送信を確認</button><button data-progress="final">件数・封じ込めを確定</button></div></div>
+      <p class="legal-note">本システムは初動整理と一次判断を支援します。法的判断・対外提出は法務・個人情報保護責任者等が確認してください。</p>
+    </aside>
+    <section class="result-pane" aria-live="polite">
+      <div class="result-header"><div><p class="eyebrow">ASSESSMENT</p><h2>初動判定</h2></div><div id="severityBadge" class="severity low">LOW</div></div>
+      <div class="decision-strip">
+        <div><span>法定報告</span><strong id="reportDecision">個人データ報告の判定対象外</strong></div>
+        <div><span>速報目安</span><strong id="initialDeadline">法定期限なし</strong><small id="initialCountdown">継続監視</small></div>
+        <div><span>確報期限</span><strong id="finalDeadline">—</strong><small id="finalCountdown"></small></div>
+        <div><span>次の責任者</span><strong id="nextOwner">法務・個情責任者</strong></div>
+      </div>
+      <nav class="tabs" aria-label="判定結果">
+        <button class="active" data-tab="summary">サマリー</button><button data-tab="questions">追加質問 <b id="questionCount">0</b></button><button data-tab="basis">根拠</button><button data-tab="disclosure">開示方針</button><button data-tab="plan">対応計画</button><button data-tab="drafts">文案・出力</button>
+      </nav>
+      <div id="summary" class="tab-panel active">
+        <article class="finding prominent"><div class="finding-title"><span class="icon">!</span><h3>判定根拠</h3></div><ul id="reasons"><li>発生事象が未選択のため、インシデント類型を確認する必要がある</li><li>個人データに関する影響が選択されていないため、PPC報告は判定対象外</li><li>漏えい・滅失・毀損の有無が未確認のため、判定を保留</li></ul></article>
+        <div class="two-col"><article class="finding"><div class="finding-title"><span class="icon blue">→</span><h3>推奨する初動</h3></div><ol id="actions"><li>確認済み事実・推測・未確認事項を分けて記録</li></ol></article><article class="finding"><div class="finding-title"><span class="icon green">✓</span><h3>対応チェックリスト</h3></div><div id="checklist" class="task-list"><label><input type="checkbox" checked="">インシデント責任者を確定</label><label><input type="checkbox">証拠保全・封じ込め</label><label><input type="checkbox">対象情報・人数を確定</label><label><input type="checkbox">速報ドラフトをレビュー</label><label><input type="checkbox">本人通知・公表判断</label></div></article></div>
+        <article class="finding timeline-card"><div class="finding-title"><span class="icon navy">◷</span><h3>対応タイムライン</h3></div><div id="timeline" class="timeline"><div class="time-node done"><span></span><div><small>発覚</small><strong>9/24 18:44</strong><p>事実整理・責任者招集</p></div></div><div class="time-node "><span></span><div><small>一次レビュー</small><strong>9/25 18:44</strong><p>影響範囲と対応方針を確認</p></div></div><div class="time-node "><span></span><div><small>再評価</small><strong>9/27 18:44</strong><p>新事実・影響拡大の有無を確認</p></div></div></div></article>
+      </div>
+      <div id="questions" class="tab-panel"><div class="panel-intro"><div><h3>不足情報の確認</h3><p>回答すると判定と推奨行動が即時更新されます。</p></div><span id="completion">追加確認なし</span></div><div id="questionCards" class="question-cards"><p class="empty">現在の入力から追加質問は生成されていません。</p></div></div>
+      <div id="basis" class="tab-panel"><div class="panel-intro"><div><h3>判定ルールと公的根拠</h3><p>入力事実、未確認事項、適用条件を分けて表示します。</p></div><span class="source-date">Rules v1.2｜基準日 2026-09-23</span></div><div id="basisCards" class="basis-cards"><article class="basis-card "><span>非該当</span><div><strong>要件 1｜個人データ関連</strong><p>個人データへの影響は未選択です</p></div></article><article class="basis-card pending"><span>未確認</span><div><strong>要件 2｜漏えい等の状態</strong><p>現在の入力：未確認・調査中</p></div></article><article class="basis-card "><span>非該当</span><div><strong>要件 3｜要配慮・財産的被害</strong><p>要配慮情報、医療情報、財産的被害のおそれ</p></div></article><article class="basis-card "><span>非該当</span><div><strong>要件 4｜不正目的の行為</strong><p>不正アクセス、マルウェア、盗難、内部持出し等</p></div></article><article class="basis-card pending"><span>未確認</span><div><strong>要件 5｜1,000人超</strong><p>入力値：0人（未確認）</p></div></article><article class="basis-card deadline"><span>期限</span><div><strong>報告要否の確定後に期限を起算</strong><p>不正目的の行為によるおそれがある場合は確報60日以内。最終判断は責任者が行います。</p></div></article></div><a class="official-link" href="https://www.ppc.go.jp/personalinfo/legal/leakAction/" target="_blank" rel="noreferrer">個人情報保護委員会の資料を確認 ↗</a></div>
+      <div id="disclosure" class="tab-panel"><div class="matrix-head"><span>相手／優先度</span><span>開示する内容</span><span>留保する内容</span></div><div id="matrixRows"><div class="matrix-row"><span><strong>経営層</strong><small>初動整理後</small></span><span>影響、期限、未確定事項、必要な意思決定</span><span class="hold">未検証の攻撃者属性・原因断定</span></div><div class="matrix-row"><span><strong>広報・Web</strong><small>公表判断後</small></span><span>確認済み事実、影響、対応状況</span><span class="hold">侵入経路の詳細、調査中の推測</span></div></div></div>
+      <div id="plan" class="tab-panel">
+        <div class="panel-intro plan-intro"><div><h3>担当・期限・作業計画</h3><p>事案と報告期限から自動生成。担当・日付・状態は会議前に編集できます。</p></div><button class="primary compact" id="xlsxBtn">ガントチャートをExcel出力</button></div>
+        <div class="milestone-strip"><div><span>発覚</span><strong id="planDetected">2026-09-24</strong></div><div><span>速報目安</span><strong id="planInitial">法定期限なし</strong></div><div><span>確報期限</span><strong id="planFinal">継続監視</strong></div></div>
+        <div class="plan-table-wrap"><table class="plan-table"><thead><tr><th>担当</th><th>タスク</th><th>開始日</th><th>期限</th><th>状態</th></tr></thead><tbody id="planRows"><tr data-row="0"><td><input data-key="owner" value="CSIRT責任者"></td><td><input data-key="work" value="初動指揮・確認済み事実の整理"></td><td><input data-key="start" type="date" value="2026-09-24"></td><td><input data-key="due" type="date" value="2026-09-24"></td><td><select data-key="status"><option>未着手</option><option selected="">対応中</option><option>完了</option><option>遅延</option></select></td></tr><tr data-row="1"><td><input data-key="owner" value="解析担当"></td><td><input data-key="work" value="証拠保全と影響範囲・侵入経路の調査"></td><td><input data-key="start" type="date" value="2026-09-24"></td><td><input data-key="due" type="date" value="2026-09-26"></td><td><select data-key="status"><option>未着手</option><option selected="">対応中</option><option>完了</option><option>遅延</option></select></td></tr><tr data-row="2"><td><input data-key="owner" value="法務・個人情報保護責任者"></td><td><input data-key="work" value="法令・契約上の報告要否を一次判断"></td><td><input data-key="start" type="date" value="2026-09-24"></td><td><input data-key="due" type="date" value="2026-09-25"></td><td><select data-key="status"><option>未着手</option><option selected="">対応中</option><option>完了</option><option>遅延</option></select></td></tr><tr data-row="3"><td><input data-key="owner" value="CSIRT責任者"></td><td><input data-key="work" value="未確認事項の担当割当と再評価"></td><td><input data-key="start" type="date" value="2026-09-25"></td><td><input data-key="due" type="date" value="2026-09-27"></td><td><select data-key="status"><option selected="">未着手</option><option>対応中</option><option>完了</option><option>遅延</option></select></td></tr><tr data-row="4"><td><input data-key="owner" value="CSIRT・所管部門"></td><td><input data-key="work" value="影響拡大の監視とクローズ条件の確認"></td><td><input data-key="start" type="date" value="2026-09-25"></td><td><input data-key="due" type="date" value="2026-09-29"></td><td><select data-key="status"><option selected="">未着手</option><option>対応中</option><option>完了</option><option>遅延</option></select></td></tr><tr data-row="5"><td><input data-key="owner" value="CSIRT"></td><td><input data-key="work" value="原因・再発防止策の取りまとめ"></td><td><input data-key="start" type="date" value="2026-09-26"></td><td><input data-key="due" type="date" value="2026-10-01"></td><td><select data-key="status"><option selected="">未着手</option><option>対応中</option><option>完了</option><option>遅延</option></select></td></tr></tbody></table></div>
+        <p class="plan-note">Excelには「対応計画・ガント」「RACI」「前提・未確認事項」の3シートを出力します。</p>
+      </div>
+      <div id="drafts" class="tab-panel">
+        <div class="draft-toolbar"><label>出力先<select id="draftTarget"><option value="executive">経営層向け第一報</option><option value="authority">監督機関向け記載案</option><option value="customer">顧客・本人向け通知案</option><option value="vendor">委託先への調査依頼</option></select></label><button class="ai-button" id="aiDraftBtn"><span>AI</span>文案を生成</button><button class="ghost" id="copyBtn">コピー</button><button class="primary compact" id="printBtn">印刷／PDF</button><button class="ghost" id="exportBtn">JSON出力</button></div>
+        <div class="generation-state"><span id="draftMode" class="mode-badge local">ローカルテンプレート</span><p id="draftNotice">外部送信なし。AI生成を選んだ場合のみ、画面上の事案情報をLLM APIへ送信します。</p></div>
+        <textarea id="draftText" class="draft" aria-label="生成された文案"></textarea><pre id="printDraft" class="print-draft" aria-hidden="true">【インシデント第一報】
+
+案件：新規インシデント
+企業・組織：未入力
+業種：東証区分なし／未判定
+重要業務：未確認
+発覚：9/24 18:44
+事案：未分類・確認中
+対象：0名（未確認）
+状況：事実関係を確認中
+
+■一次判断
+法定報告：個人データ報告の判定対象外
+速報目安：該当なし
+確報期限：該当なし
+
+■判断を求める事項
+・調査、封じ込め体制
+・対外説明の方針と承認者
+・サービス継続／停止判断
+
+※確認済み事実と未確認事項を分け、調査進展に応じて更新します。</pre><div id="copyToast" class="toast">コピーしました</div>
+      </div>
+    </section>
+  </main>
+  <dialog id="historyDialog"><div class="dialog-head"><div><p class="eyebrow">AUDIT TRAIL</p><h2>案件履歴</h2></div><button class="ghost" id="closeHistory">閉じる</button></div><div id="savedCases"></div><h3>変更履歴</h3><div id="auditLog" class="audit-log"></div></dialog>
+  <script src="./app.js"></script>
+
+</body>
+</html>
